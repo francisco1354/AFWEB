@@ -1,6 +1,14 @@
 import React from 'react';
 import { getActiveUser } from '../utils/validation';
 
+/* NavBar
+     - Controla la navegación principal y muestra el enlace ADMIN si el usuario
+         actual tiene un correo con dominio @asfaltofashion.cl.
+     - Para determinar admin se usan dos fuentes: la clave `currentUser` en
+         localStorage (sesión rápida) y `getActiveUser()` que busca el usuario
+         completo en la lista de usuarios (por si se necesita información extra).
+*/
+
 const NavBar: React.FC<{ onLogout?: () => void; onNavigate?: (target: string) => void }> = ({ onLogout, onNavigate }) => {
     // Mostrar ADMIN únicamente si el usuario actualmente logueado tiene un correo terminado en @asfaltofashion.cl
     let isAdmin = false;
@@ -60,10 +68,13 @@ const NavBar: React.FC<{ onLogout?: () => void; onNavigate?: (target: string) =>
                             <a href="#" onClick={(e) => { e.preventDefault(); if (typeof window !== 'undefined' && window.location.pathname !== '/admin') { window.location.href = '/admin'; } else { onNavigate && onNavigate('admin'); } }}>ADMIN</a>
                         </li>
                     ) : null}
-                    <li className="nav-user-item">
-                         {/* cerrar sesión */}
-                         <button onClick={() => { if (onLogout) onLogout(); else window.location.href = '/'; }} className="logout-btn">Cerrar Sesión</button>
-                    </li>
+                <li className="nav-user-item">
+                    {/* Botón de cerrar sesión: si el padre pasó `onLogout` lo usamos,
+                        sino hacemos una navegación al root como comportamiento por
+                        defecto. Esto mantiene la barra de navegación usable sin
+                        necesidad de que todos los padres implementen onLogout. */}
+                    <button onClick={() => { if (onLogout) onLogout(); else window.location.href = '/'; }} className="logout-btn">Cerrar Sesión</button>
+                </li>
                 </ul>
             </nav>
         </header>

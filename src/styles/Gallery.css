@@ -251,6 +251,18 @@ body {
 .btn-secondary { background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.08); padding:8px 12px; border-radius:6px; cursor:pointer; }
 .btn-primary { background:#e74c3c; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
 
+/* Botón de like usado en las tarjetas */
+.btn-like {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #ffd166;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.btn-like[aria-pressed="true"] { background: rgba(255,209,102,0.12); color: #ff6b6b; border-color: rgba(255,209,102,0.2); }
+
 @media (max-width: 480px) {
     .floating-upload-btn { right: 18px; bottom: 20px; width:56px; height:56px; font-size:30px; }
     .upload-modal-card { width: 92%; }

@@ -18,6 +18,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
     // mostrar/ocultar contraseña
     const [showPassword, setShowPassword] = useState(false);
 
+    // Manejo del submit de login: validaciones simples y comprobación local
+    // contra usuarios guardados en localStorage. No hacer aquí hashing ni
+    // comprobaciones seguras — esto es un ejemplo educativo/local.
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
     // limpiar errores

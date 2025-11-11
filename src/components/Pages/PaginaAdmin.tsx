@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import NavBar from '../NavBar';
 import '../../styles/Admin.css';
 
+// Página administrativa: listado de posts, usuarios y registro de chat.
+// Nota: esta vista está pensada como una herramienta de inspección local
+// (usa localStorage). No es un panel seguro para un entorno de producción.
 const PaginaAdmin: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -29,9 +32,23 @@ const PaginaAdmin: React.FC = () => {
   };
 
   const deleteUser = (nombre_usu: string) => {
-    const next = users.filter((u: any) => u.nombre_usu !== nombre_usu);
-    setUsers(next);
-    localStorage.setItem('users', JSON.stringify(next));
+    try {
+      const reason = window.prompt(`Razón para eliminar el usuario ${nombre_usu} (opcional):`);
+      // Si el usuario cancela el prompt, no hacemos nada
+      if (reason === null) return;
+      const next = users.filter((u: any) => u.nombre_usu !== nombre_usu);
+      setUsers(next);
+      localStorage.setItem('users', JSON.stringify(next));
+      // Guardar auditoría de eliminación con la razón
+      const raw = localStorage.getItem('user_deletions') || '[]';
+      const audits = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
+      audits.push({ user: nombre_usu, reason: reason || '(sin razón)', date: new Date().toISOString() });
+      localStorage.setItem('user_deletions', JSON.stringify(audits));
+      // Informar al administrador
+      try { alert(`Usuario ${nombre_usu} eliminado. Razón guardada.`); } catch (e) {}
+    } catch (e) {
+      // silencioso
+    }
   };
 
   const clearChat = () => {
@@ -43,7 +60,7 @@ const PaginaAdmin: React.FC = () => {
     <div className="admin-page">
       <NavBar />
       <main className="admin-main">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <h1>Panel Administrativo — Asfalto Fashion</h1>
             <p className="admin-intro">Aquí puedes revisar y administrar datos del sitio (posts, usuarios y chat). Esta es una vista inicial pensada para uso docente/administrador.</p>
@@ -52,7 +69,7 @@ const PaginaAdmin: React.FC = () => {
             <button className="btn-primary" onClick={() => {
               // crear admin demo si no existe y activar flag de admin para la app
               try {
-                const demo = { rut:'1-9', nombre:'Admin Uno', fecha_nac:'1990-01-01', correo:'admin@asfaltofashion.cl', nombre_usu:'admin01', password:'abc123' };
+                const demo = { rut:'1-9', nombre:'Admin demojaja', fecha_nac:'1990-01-01', correo:'admin@asfaltofashion.cl', nombre_usu:'admin01', password:'abc123' };
                 const raw = localStorage.getItem('users');
                 const arr = raw ? JSON.parse(raw) : [];
                 const exists = arr.some((u: any) => u.nombre_usu === demo.nombre_usu || u.correo === demo.correo);
@@ -109,6 +126,22 @@ const PaginaAdmin: React.FC = () => {
                   <div className="admin-item-body">
                     <strong>{p.title}</strong>
                     <div className="admin-meta">{p.category} — {p.author}</div>
+                            {/* Mostrar contador de likes y lista de comentarios asociada a
+                                cada publicación. Esto ayuda al administrador a revisar las
+                                interacciones del sitio sin necesidad de backend. */}
+                            <div style={{ marginTop: 8, fontSize: 13, color: '#ccc' }}>
+                              Likes: <strong style={{ color: '#fff' }}>{(p.likes && p.likes.length) || 0}</strong>
+                            </div>
+                            {p.comments && p.comments.length > 0 ? (
+                              <div style={{ marginTop: 8 }}>
+                                <em style={{ color: '#bbb', fontSize: 13 }}>Comentarios:</em>
+                                <ul style={{ marginTop: 6 }}>
+                                  {p.comments.map((c:any) => (
+                                    <li key={c.id} style={{ fontSize: 13, color: '#ddd' }}><strong>{c.user}:</strong> {c.text}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
                   </div>
                   <div className="admin-actions">
                     <button onClick={() => deletePost(p.id)} className="btn-danger">Eliminar</button>

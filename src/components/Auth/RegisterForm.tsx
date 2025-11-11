@@ -41,6 +41,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         setError(''); 
     };
 
+    // Manejo del submit del registro: realiza validaciones básicas y guarda
+    // el usuario en localStorage mediante `saveUser`. Esta lógica es local
+    // y educativa; en producción habría que enviar los datos a un backend
+    // con control de contraseñas y validaciones en servidor.
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');

@@ -24,20 +24,70 @@
 
 .ffxiv-hero { display:flex; justify-content:center; margin: 30px 0; }
 
+/* Estilos para interacciones dentro de la vista de publicación */
+.btn-like {
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.06);
+  color: #e74c3c;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.btn-like[aria-pressed="true"] { background: rgba(231, 76, 60, 0.08); color: #c0392b; }
+
+/* Comentarios: input y error */
+.comment-input { width: 100%; min-height: 72px; max-height: 220px; }
+.comment-error { color: #ff6b6b; font-size: 13px; margin-top: 6px; }
+
+/* Estilos modernos para la lista de comentarios */
+.comment-item { display:flex; gap:12px; padding:10px; border-radius:8px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); margin-bottom:8px; align-items:flex-start; }
+.comment-avatar { width:40px; height:40px; border-radius:50%; background:#222; color:#ffd166; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; }
+.comment-body { flex:1; }
+.comment-meta { display:flex; gap:8px; align-items:center; }
+.comment-user { color:#fff; font-weight:700; font-size:14px; }
+.comment-date { color:#999; font-size:12px; }
+.comment-text { color:#eaeaea; margin-top:6px; line-height:1.4; }
+
+.comment-form-wrap { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.comment-input-wrap { display:block; }
+.comment-actions-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+
+/* Ajustes responsivos */
+@media (max-width: 900px) {
+  .ffxiv-page { padding: 60px 24px 24px; }
+  .ffxiv-card { max-width: 100%; }
+}
+
 /* White card container that mimics the LV article look */
 .ffxiv-card {
-  /* softer, less intrusive white 'mat' */
+  /* tarjeta principal que contiene media + contenido */
   background: #fafafa; /* slightly off-white */
-  padding: 22px;
+  padding: 18px;
   border-radius: 12px;
   max-width: 1000px;
-  width: auto;
-  margin: 0 auto; /* center the card within the page */
-  box-shadow: 0 14px 36px rgba(0,0,0,0.42);
+  width: 100%;
+  margin: 0 auto;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.45);
   border: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
 }
-.ffxiv-card img { display: block; width: 100%; border-radius: 6px; object-fit: cover; background: #f6f6f6; }
-.ffxiv-card video { display: block; width: 100%; border-radius: 6px; margin-top: 12px; }
+.ffxiv-media {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ffxiv-card img, .ffxiv-card video { display: block; width: 100%; border-radius: 6px; object-fit: cover; background: #f6f6f6; }
+.ffxiv-card video { margin-top: 12px; }
+
+/* metadatos y encabezado dentro de la tarjeta */
+.ffxiv-meta { margin-top: 14px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.ffxiv-meta .meta-left { flex:1; }
+.ffxiv-meta .meta-right { flex:0 0 auto; text-align:right; color:#777; }
+.ffxiv-title { font-size: 22px; margin: 0 0 6px; font-family: 'Playfair Display', serif; }
+.ffxiv-subtle { color:#777; font-size:13px; }
 
 .ffxiv-content { display: grid; grid-template-columns: 1fr 320px; gap: 28px; margin-top: 22px; }
 .ffxiv-article { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); }

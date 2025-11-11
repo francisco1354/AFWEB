@@ -2,10 +2,28 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { type UserData } from '../../utils/validation';
+/*
+    PaginaPrincipal.tsx
+    - Muestra la galería principal y permite a usuarios autenticados
+        interactuar con publicaciones (likes y comentarios).
+    - Los likes/comentarios se guardan en `asfalto_posts` en localStorage
+        mediante los helpers de `validation.ts`.
+    - Diseño: componentes pequeños y helpers locales para mantener la UI
+        reactiva cuando el usuario interactúa.
+*/
 import '../../styles/Gallery.css'; 
 
 // --- Tipos de Datos y Mocks ---
-interface Post { id: string; image: string; title: string; category: string; author: string; date: string; }
+interface Post {
+    id: string;
+    image: string;
+    title: string;
+    category: string;
+    author: string;
+    date: string;
+    likes?: string[];
+    comments?: { id: string; user: string; text: string; date: string }[];
+}
 interface PaginaPrincipalProps { currentUser: UserData; onLogout: () => void; }
 
 const MOCK_GRID_POSTS: Post[] = [
@@ -35,24 +53,25 @@ const MediaElement: React.FC<{ src: string; alt?: string; className?: string }> 
 };
 
 import NavBar from '../NavBar';
+import { getPosts as loadStoredPosts, savePosts as persistPosts } from '../../utils/validation';
 
 const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({ currentUser, onLogout }) => {
     // estado: lista de posts (inicializamos leyendo localStorage para evitar sobreescribirlo)
     const [posts, setPosts] = useState<Post[]>(() => {
         try {
-            const raw = localStorage.getItem('asfalto_posts');
-            if (raw) {
-                const parsed = JSON.parse(raw) as Post[];
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                    return parsed;
-                }
+            const parsed = loadStoredPosts();
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                parsed.sort((a: Post, b: Post) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                return parsed as Post[];
             }
         } catch (e) {
             // ignore
         }
         return MOCK_GRID_POSTS.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     });
+    // NOTE: los comentarios se muestran únicamente en la vista detalle (/post/:id).
+    // En la cuadrícula dejamos solo el botón de "like" (contador), para evitar
+    // duplicar la UI de comentarios en dos sitios.
     // filtro de categoría
     const [filter, setFilter] = useState<string>('todos');
     // modal de subida abierto?
@@ -82,6 +101,8 @@ const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({ currentUser, onLogout
             date: new Date().toISOString().split('T')[0],
         };
         setPosts(prev => [newPost, ...prev]);
+        const next = [newPost, ...posts];
+        try { persistPosts(next); } catch (e) {}
         setFilter('todos');
         setUploadOpen(false);
     };
@@ -90,11 +111,31 @@ const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({ currentUser, onLogout
     // guardar posts en localStorage cuando cambian
     useEffect(() => {
         try {
-            localStorage.setItem('asfalto_posts', JSON.stringify(posts));
-        } catch (err) {
-
-        }
+            persistPosts(posts);
+        } catch (err) {}
     }, [posts]);
+
+    // Alterna el estado de "like" para el usuario actual en una publicación.
+    // Reglas:
+    // - Debe haber un usuario logueado para poder dar like.
+    // - Si ya había like del mismo usuario, se quita; si no, se añade.
+    const handleToggleLike = (postId: string) => {
+        const user = currentUser?.nombre_usu;
+        if (!user) return alert('Inicia sesión para dar like.');
+        setPosts(prev => {
+            const next = prev.map(p => {
+                if (p.id !== postId) return p;
+                const likes: string[] = Array.isArray(p.likes) ? [...p.likes] : [];
+                const idx = likes.indexOf(user);
+                if (idx >= 0) likes.splice(idx, 1); else likes.push(user);
+                return { ...p, likes };
+            });
+            try { persistPosts(next); } catch (e) {}
+            return next;
+        });
+    };
+
+    // Comentarios manejados en PaginaPost (detalle). Aquí dejaremos solo likes.
 
  
     // Nota: la carga desde localStorage se hace en el inicializador de useState (arriba)
@@ -150,7 +191,7 @@ const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({ currentUser, onLogout
                 
                 {/* 4. MASONRY GRID DE POSTS */}
                 <section className="masonry-grid editorial-grid" aria-label="Posts de la comunidad de moda">
-                    {displayedPosts.length > 0 ? (
+                            {displayedPosts.length > 0 ? (
                             displayedPosts.map((item) => (
                                 <article 
                                     key={item.id} 
@@ -197,6 +238,15 @@ const PaginaPrincipal: React.FC<PaginaPrincipalProps> = ({ currentUser, onLogout
                                         </h3>
                                         <p className="masonry-meta-author">Por {item.author}</p>
                                     </div>
+                                        {/* Likes y comentarios */}
+                                        <div className="post-interactions" style={{ marginTop: 8 }}>
+                                            <button className="btn-like" onClick={() => handleToggleLike(item.id)} aria-pressed={item.likes && item.likes.includes(currentUser.nombre_usu)}>
+                                                {item.likes && item.likes.includes(currentUser.nombre_usu) ? '♥' : '♡'} {item.likes ? item.likes.length : 0}
+                                            </button>
+
+                                            {/* Comentarios movidos a la vista detalle (PaginaPost). Aquí
+                                                mostramos únicamente el contador/acción de like. */}
+                                        </div>
                                 </article>
                             ))
                         ) : (

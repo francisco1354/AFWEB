@@ -34,9 +34,21 @@ export const validarEdad = (fecha: string): boolean => {
 
 const USER_STORAGE_KEY = 'users';
 
+// Devuelve la lista de usuarios desde localStorage.
+// Importante: NO crea ni persiste usuarios por defecto. Si no hay usuarios,
+// devuelve un arreglo vacío. Esto evita que la aplicación inserte usuarios
+// automáticamente al arrancar (por ejemplo admin demo).
 export const getUsers = (): UserData[] => {
-    const usersJson = localStorage.getItem(USER_STORAGE_KEY);
-    return usersJson ? JSON.parse(usersJson) : [];
+    try {
+        const usersJson = localStorage.getItem(USER_STORAGE_KEY);
+        if (!usersJson) return [];
+        const parsed = JSON.parse(usersJson) as UserData[];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        // Si hay un error al parsear, devolver una lista vacía en vez de
+        // crear automáticamente usuarios.
+        return [];
+    }
 };
 
 export const saveUser = (newUser: UserData): void => {
@@ -60,3 +72,46 @@ export const getActiveUser = (): UserData | null => {
         return null;
     }
 }
+
+// --- Helpers para manejar posts, likes y comentarios ---
+const POSTS_KEY = 'asfalto_posts';
+
+export const getPosts = (): any[] => {
+    try {
+        const raw = localStorage.getItem(POSTS_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        return [];
+    }
+};
+
+export const savePosts = (posts: any[]): void => {
+    try {
+        localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+        window.dispatchEvent(new Event('asfalto_posts_updated'));
+    } catch (e) {
+        // ignore
+    }
+};
+
+export const addCommentToPost = (postId: string, comment: { id: string; user: string; text: string; date: string }) => {
+    const posts = getPosts();
+    const next = posts.map(p => {
+        if (p.id !== postId) return p;
+        const comments = Array.isArray(p.comments) ? [...p.comments, comment] : [comment];
+        return { ...p, comments };
+    });
+    savePosts(next);
+};
+
+export const toggleLikeOnPost = (postId: string, userName: string) => {
+    const posts = getPosts();
+    const next = posts.map(p => {
+        if (p.id !== postId) return p;
+        const likes: string[] = Array.isArray(p.likes) ? [...p.likes] : [];
+        const idx = likes.indexOf(userName);
+        if (idx >= 0) likes.splice(idx, 1); else likes.push(userName);
+        return { ...p, likes };
+    });
+    savePosts(next);
+};

@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:watch": "vitest --watch"
+  "test": "vitest",
+  "test:watch": "vitest --watch"
   },
   "dependencies": {
     "react": "^19.1.1",

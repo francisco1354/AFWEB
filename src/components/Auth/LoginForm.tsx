@@ -1,6 +1,6 @@
 // src/components/Auth/LoginForm.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { getUsers, type UserData } from '../../utils/validation';
 
 interface LoginFormProps {
@@ -17,6 +17,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
     const [fieldErrors, setFieldErrors] = useState<{usuario?:string; password?:string}>({});
     // mostrar/ocultar contraseña
     const [showPassword, setShowPassword] = useState(false);
+    const passwordRef = useRef<HTMLInputElement | null>(null);
 
     // Manejo del submit de login: validaciones simples y comprobación local
     // contra usuarios guardados en localStorage. No hacer aquí hashing ni
@@ -62,26 +63,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
 
             <label className="field password-field">
                 {/* campo: contraseña */}
-                <input 
-                    type={showPassword ? 'text' : 'password'} 
-                    id="password" 
-                    placeholder="Contraseña" 
-                    value={password} 
-                    onChange={e => setPassword(e.target.value)} 
+                <input
+                    ref={passwordRef}
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    placeholder="Contraseña"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
                 />
-                <button type="button" className="eye-toggle" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
-                    {showPassword ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M17.94 17.94L6.06 6.06" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M10.58 10.58A3 3 0 0 0 13.42 13.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    )}
+                <button
+                    type="button"
+                    className="eye-toggle"
+                    onClick={() => {
+                        setShowPassword(s => {
+                            const next = !s;
+                            setTimeout(() => passwordRef.current?.focus(), 0);
+                            return next;
+                        });
+                    }}
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                    {showPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
                 {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
             </label>

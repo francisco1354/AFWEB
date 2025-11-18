@@ -20,12 +20,17 @@ const NavBar: React.FC<{ onLogout?: () => void; onNavigate?: (target: string) =>
                 isAdmin = true;
             }
         }
-        // como respaldo, intentar obtener el usuario activo desde helper (siempre requiere correo)
+        // como respaldo, intentar obtener el usuario activo desde helper
         if (!isAdmin) {
             const full = getActiveUser();
-            if (full && typeof full.correo === 'string' && full.correo.toLowerCase().endsWith('@asfaltofashion.cl')) isAdmin = true;
+            // permitir que el usuario tenga un flag isAdmin en su registro
+            if (full && (full as any).isAdmin === true) isAdmin = true;
+            // mantener compatibilidad con el dominio de correo
+            if (!isAdmin && full && typeof full.correo === 'string' && full.correo.toLowerCase().endsWith('@asfaltofashion.cl')) isAdmin = true;
         }
     } catch (e) {}
+
+    
 
     return (
         <header className="main-nav-container">
@@ -54,17 +59,12 @@ const NavBar: React.FC<{ onLogout?: () => void; onNavigate?: (target: string) =>
                 </div>
 
                 <ul className="menuNav menuNav-right">
-                    {/* navegación interna: editorial */}
-                    <li>
-                        <a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate('editorial'); }}>EDITORIAL</a>
-                    </li>
                     {/* contacto (ruta) */}
                     <li>
                         <a href="#" onClick={(e) => { e.preventDefault(); if (typeof window !== 'undefined' && window.location.pathname !== '/contacto') { window.location.href = '/contacto'; } else { onNavigate && onNavigate('contacto'); } }}>CONTACTO</a>
                     </li>
                     {isAdmin ? (
                         <li>
-                            {/* enlace al panel admin */}
                             <a href="#" onClick={(e) => { e.preventDefault(); if (typeof window !== 'undefined' && window.location.pathname !== '/admin') { window.location.href = '/admin'; } else { onNavigate && onNavigate('admin'); } }}>ADMIN</a>
                         </li>
                     ) : null}

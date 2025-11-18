@@ -1,35 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import NavBar from '../NavBar';
 import '../../styles/Admin.css';
+import { getPosts, savePosts, getUsers, saveUsers } from '../../utils/validation';
 
-// Página administrativa: listado de posts, usuarios y registro de chat.
+// Página administrativa: listado de posts, usuarios y comentarios.
 // Nota: esta vista está pensada como una herramienta de inspección local
 // (usa localStorage). No es un panel seguro para un entorno de producción.
 const PaginaAdmin: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [chat, setChat] = useState<any[]>([]);
 
   useEffect(() => {
     try {
-      const p = localStorage.getItem('asfalto_posts');
-      setPosts(p ? JSON.parse(p) : []);
+      setPosts(getPosts());
     } catch (e) { setPosts([]); }
     try {
-      const u = localStorage.getItem('users');
-      setUsers(u ? JSON.parse(u) : []);
+      setUsers(getUsers());
     } catch (e) { setUsers([]); }
-    try {
-      const c = localStorage.getItem('asfalto_chat');
-      setChat(c ? JSON.parse(c) : []);
-    } catch (e) { setChat([]); }
   }, []);
 
   const deletePost = (id: string) => {
     const next = posts.filter(p => p.id !== id);
     setPosts(next);
-    localStorage.setItem('asfalto_posts', JSON.stringify(next));
+    try { savePosts(next); } catch (e) { localStorage.setItem('asfalto_posts', JSON.stringify(next)); }
   };
+
+  // lista plana de todos los comentarios con referencia a la publicación
+  const allComments = posts.flatMap(p => Array.isArray(p.comments) ? p.comments.map((c:any) => ({ ...c, postId: p.id, postTitle: p.title })) : []);
 
   const deleteUser = (nombre_usu: string) => {
     try {
@@ -38,7 +35,7 @@ const PaginaAdmin: React.FC = () => {
       if (reason === null) return;
       const next = users.filter((u: any) => u.nombre_usu !== nombre_usu);
       setUsers(next);
-      localStorage.setItem('users', JSON.stringify(next));
+      try { saveUsers(next); } catch (e) { localStorage.setItem('users', JSON.stringify(next)); }
       // Guardar auditoría de eliminación con la razón
       const raw = localStorage.getItem('user_deletions') || '[]';
       const audits = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
@@ -51,9 +48,30 @@ const PaginaAdmin: React.FC = () => {
     }
   };
 
-  const clearChat = () => {
-    setChat([]);
-    localStorage.removeItem('asfalto_chat');
+  const toggleAdmin = (nombre_usu: string) => {
+    try {
+      const all = getUsers();
+      const next = all.map((u:any) => u.nombre_usu === nombre_usu ? { ...u, isAdmin: !u.isAdmin } : u);
+      setUsers(next);
+      saveUsers(next);
+      try { alert(`Usuario ${nombre_usu} actualizado. isAdmin=${next.find((x:any)=>x.nombre_usu===nombre_usu)?.isAdmin}`); } catch(e){}
+    } catch (e) {
+      // silencioso
+    }
+  };
+
+  const deleteComment = (postId: string, commentId: string) => {
+    try {
+      const nextPosts = posts.map(p => {
+        if (p.id !== postId) return p;
+        const comments = Array.isArray(p.comments) ? p.comments.filter((c:any) => c.id !== commentId) : [];
+        return { ...p, comments };
+      });
+      setPosts(nextPosts);
+      savePosts(nextPosts);
+    } catch (e) {
+      // silencioso
+    }
   };
 
   return (
@@ -66,48 +84,7 @@ const PaginaAdmin: React.FC = () => {
             <p className="admin-intro">Aquí puedes revisar y administrar datos del sitio (posts, usuarios y chat). Esta es una vista inicial pensada para uso docente/administrador.</p>
           </div>
           <div>
-            <button className="btn-primary" onClick={() => {
-              // crear admin demo si no existe y activar flag de admin para la app
-              try {
-                const demo = { rut:'1-9', nombre:'Admin demojaja', fecha_nac:'1990-01-01', correo:'admin@asfaltofashion.cl', nombre_usu:'admin01', password:'abc123' };
-                const raw = localStorage.getItem('users');
-                const arr = raw ? JSON.parse(raw) : [];
-                const exists = arr.some((u: any) => u.nombre_usu === demo.nombre_usu || u.correo === demo.correo);
-                if (!exists) {
-                  arr.push(demo);
-                  localStorage.setItem('users', JSON.stringify(arr));
-                }
-                // iniciar sesión como demo y marcar isAdmin
-                localStorage.setItem('currentUser', JSON.stringify({ nombre_usu: demo.nombre_usu, nombre: demo.nombre, correo: demo.correo }));
-                localStorage.setItem('isAdmin', 'true');
-                // recargar para que NavBar detecte admin
-                location.reload();
-              } catch (e) {
-                
-              }
-            }}>Crear admin demo</button>
-            
-            <button style={{ marginLeft: 12 }} className="btn-secondary" onClick={() => {
-              try {
-                if (!confirm('Restaurar publicaciones por defecto? Esto sobrescribirá las publicaciones actuales.')) return;
-                const defaultPosts = [
-                  { id: 'p1', title: 'Central Look LOOKBOOK', image: '/IMG/central.jpg', category: 'PERFIL', author: 'USUARIO_ASFALTO' },
-                  { id: 'p2', title: 'Kai Style LOOKBOOK', image: '/IMG/kai.jpg', category: 'DESFILES', author: 'USUARIO_ASFALTO' },
-                  { id: 'p3', title: 'Marlon Fashion LOOKBOOK', image: '/IMG/marlon.jpg', category: 'EDITORIAL', author: 'ASFALTOFASHION' },
-                  { id: 'p4', title: 'Louis Vuitton x Final Fantasy — Lookbook', image: '/IMG/Louis-Vuitton-Final-Fantasy-Lightning-Square-Enix-2.webp', category: 'COLECCIONES', author: 'LOUIS VUITTON' },
-                  // Young Thug: usar la imagen que existe en /public/IMG (nombre con espacio 'yun tug.jpg')
-                  { id: 'p5', title: 'Young Thug - Backstage Look', image: '/IMG/yun tug.jpg', category: 'DESFILES', author: 'YUNGTHUG' },
-                  { id: 'p6', title: 'VSA Collection — Street Editorial', image: '/IMG/ffxlv1.jpg', category: 'COLECCIONES', author: 'VSA' },
-                  // Galegale tiene un video; MediaElement maneja .mp4 en la galería principal
-                  { id: 'p7', title: 'Galegale — Video Editorial', image: '/IMG/galegale.mp4', category: 'EDITORIAL', author: 'GALEGale' }
-                ];
-                localStorage.setItem('asfalto_posts', JSON.stringify(defaultPosts));
-                // recargar para que la UI muestre los posts restaurados
-                location.reload();
-              } catch (e) {
-                // silencioso
-              }
-            }}>Restaurar publicaciones</button>
+            {/* Acciones administrativas: ninguna acción de "demo" disponible. */}
           </div>
         </div>
 
@@ -158,13 +135,14 @@ const PaginaAdmin: React.FC = () => {
             <ul className="admin-list">
               {users.map((u:any) => (
                 <li key={u.nombre_usu} className="admin-item">
-                  <div className="admin-item-body">
-                    <strong>{u.nombre}</strong>
-                    <div className="admin-meta">{u.nombre_usu} — {u.correo}</div>
-                  </div>
-                  <div className="admin-actions">
-                    <button onClick={() => deleteUser(u.nombre_usu)} className="btn-danger">Eliminar</button>
-                  </div>
+                    <div className="admin-item-body">
+                      <strong>{u.nombre}</strong>
+                      <div className="admin-meta">{u.nombre_usu} — {u.correo}</div>
+                    </div>
+                    <div className="admin-actions">
+                      <button onClick={() => toggleAdmin(u.nombre_usu)} className="btn-secondary">{u.isAdmin ? 'Quitar admin' : 'Dar admin'}</button>
+                      <button onClick={() => deleteUser(u.nombre_usu)} className="btn-danger" style={{ marginLeft: 8 }}>Eliminar</button>
+                    </div>
                 </li>
               ))}
             </ul>
@@ -172,18 +150,27 @@ const PaginaAdmin: React.FC = () => {
         </section>
 
         <section className="admin-section">
-          <h2>Chat (registro)</h2>
-          <p>Mensajes guardados en localStorage (`asfalto_chat`).</p>
-          <div className="chat-log">
-            {chat.length === 0 ? <p>No hay mensajes.</p> : chat.map((m:any, i:number) => (
-              <div key={m.id || i} className={`chat-log-line ${m.from}`}>
-                <span className="chat-log-from">{m.from}</span>
-                <span className="chat-log-text">{m.text}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <button onClick={clearChat} className="btn-danger">Borrar chat</button>
+          <h2>Comentarios de usuarios</h2>
+          <p>Lista de todos los comentarios publicados en las diferentes publicaciones.</p>
+          <div className="comments-log">
+            {allComments.length === 0 ? (
+              <p>No hay comentarios publicados.</p>
+            ) : (
+              <ul className="admin-list">
+                {allComments.map((c:any) => (
+                  <li key={c.id} className="admin-item">
+                    <div className="admin-item-body">
+                      <strong>{c.user}</strong>
+                      <div className="admin-meta">En: {c.postTitle}</div>
+                      <div style={{ marginTop: 6 }}>{c.text}</div>
+                    </div>
+                    <div className="admin-actions">
+                      <button onClick={() => deleteComment(c.postId, c.id)} className="btn-danger">Eliminar comentario</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 

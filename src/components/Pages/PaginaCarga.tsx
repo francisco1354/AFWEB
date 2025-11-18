@@ -13,7 +13,7 @@ const REDIRECT_DELAY_MS = 3000; // 3 segundos para el efecto de carga
 
 const PaginaCarga: React.FC<PaginaCargaProps> = ({ user, onComplete }) => {
     
-    // 💡 Lógica de Redirección (el temporizador de 3 segundos)
+    //  Lógica de Redirección (el temporizador de 3 segundos)
     useEffect(() => {
         const timer = setTimeout(() => {
             onComplete(); // Llama a la función en App.tsx para cambiar la vista

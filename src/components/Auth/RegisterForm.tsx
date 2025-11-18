@@ -1,13 +1,14 @@
 // src/components/Auth/RegisterForm.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
     validarRut, 
     validarCorreo, 
     validarPassword, 
     validarEdad,
     getUsers, 
-    saveUser, 
+    saveUser,
+    isValidAdminToken,
 } from '../../utils/validation';
 import type { UserData } from '../../utils/validation';
 
@@ -20,10 +21,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     const [formData, setFormData] = useState<UserData>({
         rut: '', nombre: '', fecha_nac: '', correo: '', nombre_usu: '', password: ''
     });
+    const [adminToken, setAdminToken] = useState('');
     // mensaje de error
     const [error, setError] = useState('');
     // mensaje de éxito
     const [success, setSuccess] = useState('');
+    // mostrar/ocultar contraseña (toggle ojo)
+    const [showPassword, setShowPassword] = useState(false);
+    const passwordRef = useRef<HTMLInputElement | null>(null);
 
     // manejar cambios en inputs
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +46,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         setError(''); 
     };
 
+    const handleAdminTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setAdminToken(e.target.value);
+        setError('');
+    };
+
     // Manejo del submit del registro: realiza validaciones básicas y guarda
     // el usuario en localStorage mediante `saveUser`. Esta lógica es local
     // y educativa; en producción habría que enviar los datos a un backend
@@ -50,23 +60,37 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         setError('');
         setSuccess('');
 
-    // 1. validaciones básicas
-    if (!validarRut(formData.rut)) return setError('RUT inválido. Formato: 12345678-K');
-    if (!formData.nombre.trim()) return setError('Ingresa tu nombre.');
-    if (!validarEdad(formData.fecha_nac)) return setError('Debes ser mayor de 18 años.');
-    if (!validarCorreo(formData.correo)) return setError('Correo inválido.');
-    if (!formData.nombre_usu.trim()) return setError('Ingresa un nombre de usuario.');
-    if (!validarPassword(formData.password)) return setError('Contraseña debe tener al menos 6 caracteres.');
+        // 1. validaciones básicas
+        if (!validarRut(formData.rut)) return setError('RUT inválido. Formato: 12345678-K');
+        if (!formData.nombre.trim()) return setError('Ingresa tu nombre.');
+        if (!validarEdad(formData.fecha_nac)) return setError('Debes ser mayor de 18 años.');
+        if (!validarCorreo(formData.correo)) return setError('Correo inválido.');
+        if (!formData.nombre_usu.trim()) return setError('Ingresa un nombre de usuario.');
+        if (!validarPassword(formData.password)) return setError('Contraseña debe tener al menos 6 caracteres.');
 
-    // 2. verificar unicidad
-    const users = getUsers();
-    if (users.some(u => u.rut === formData.rut)) return setError('El RUT ya está registrado.');
-    if (users.some(u => u.correo === formData.correo)) return setError('El correo ya está registrado.');
-    if (users.some(u => u.nombre_usu === formData.nombre_usu)) return setError('El usuario ya está registrado.');
+        // 2. verificar unicidad
+        const users = getUsers();
+        if (users.some(u => u.rut === formData.rut)) return setError('El RUT ya está registrado.');
+        if (users.some(u => u.correo === formData.correo)) return setError('El correo ya está registrado.');
+        if (users.some(u => u.nombre_usu === formData.nombre_usu)) return setError('El usuario ya está registrado.');
 
-    // 3. guardar usuario (localStorage)
-    saveUser(formData);
-    setSuccess('Registro exitoso. Serás redirigido a Iniciar Sesión.');
+        // 2.5 Si el correo es @asfaltofashion.cl, exigir token de admin para marcar isAdmin
+        let isAdminFlag = false;
+        try {
+            const domain = formData.correo.split('@')[1] || '';
+            if (domain.toLowerCase() === 'asfaltofashion.cl') {
+                if (!adminToken.trim()) return setError('Debes ingresar el token de administrador para correos @asfaltofashion.cl');
+                if (!isValidAdminToken(adminToken.trim())) return setError('Token inválido.');
+                isAdminFlag = true;
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // 3. guardar usuario (localStorage)
+        const toSave = { ...formData, ...(isAdminFlag ? { isAdmin: true } : {}) } as any;
+        saveUser(toSave);
+        setSuccess('Registro exitoso. Serás redirigido a Iniciar Sesión.');
         
         setTimeout(() => {
             onSuccess();
@@ -92,11 +116,40 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
             <label className="field">
                 <input type="text" id="correo" placeholder="Correo electrónico" value={formData.correo} onChange={handleChange} />
             </label>
+            {/* Si el correo es del dominio asfaltofashion.cl, pedir token de admin */}
+            {formData.correo.toLowerCase().endsWith('@asfaltofashion.cl') ? (
+                <label className="field">
+                    <input type="password" id="adminToken" placeholder="Token de administrador" value={adminToken} onChange={handleAdminTokenChange} />
+                </label>
+            ) : null}
             <label className="field">
                 <input type="text" id="nombre_usu" placeholder="Nombre de usuario" value={formData.nombre_usu} onChange={handleChange} />
             </label>
-            <label className="field">
-                <input type="password" id="password" placeholder="Contraseña (mín. 6 chars)" value={formData.password} onChange={handleChange} />
+            <label className="field password-field">
+                <input
+                    ref={passwordRef}
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    placeholder="Contraseña (mín. 6 chars)"
+                    value={formData.password}
+                    onChange={handleChange}
+                />
+                <button
+                    type="button"
+                    className="eye-toggle"
+                    onClick={() => {
+                        setShowPassword(s => {
+                            const next = !s;
+                            setTimeout(() => passwordRef.current?.focus(), 0);
+                            return next;
+                        });
+                    }}
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                    {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
             </label>
 
             <div className="form-message">

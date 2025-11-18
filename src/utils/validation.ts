@@ -8,6 +8,8 @@ export interface UserData {
     nombre_usu: string;
     password: string;
 }
+// Nota: permitimos un flag opcional `isAdmin` para marcar administradores
+export interface UserDataWithAdmin extends UserData { isAdmin?: boolean }
 
 export const validarRut = (rut: string): boolean => { 
     return /^\d{7,8}-[\dKk]$/.test(rut); 
@@ -56,6 +58,16 @@ export const saveUser = (newUser: UserData): void => {
     users.push(newUser);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
     window.dispatchEvent(new Event('asfalto_users_updated')); 
+};
+
+// Guardar lista completa de usuarios (útil para admin que modifica roles)
+export const saveUsers = (nextUsers: UserData[]): void => {
+    try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUsers));
+        window.dispatchEvent(new Event('asfalto_users_updated'));
+    } catch (e) {
+        // ignore
+    }
 };
 
 // Función para obtener el usuario activo
@@ -115,3 +127,10 @@ export const toggleLikeOnPost = (postId: string, userName: string) => {
     });
     savePosts(next);
 };
+
+// Admin token used to grant admin role at registration.
+// NOTE: this is client-side for this demo project. In production this
+// should be validated server-side and stored securely.
+export const ADMIN_TOKEN = 'ASFALTO-ADMIN-2025';
+
+export const isValidAdminToken = (token: string) => token === ADMIN_TOKEN;

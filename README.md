@@ -71,3 +71,25 @@ export default defineConfig([
   },
 ])
 ```
+
+## Quick setup (after cloning)
+
+If you clone this repository, run the following once to install dependencies (Windows PowerShell):
+
+```powershell
+npm run setup
+```
+
+This runs a safe install that tolerates common peer-dependency mismatches used in this template. After that you can run the dev server or tests:
+
+```powershell
+npm run dev
+npm test
+```
+
+If you prefer a single command to install and run tests use:
+
+```powershell
+npm run test:ci
+```
+

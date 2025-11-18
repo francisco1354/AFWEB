@@ -52,8 +52,6 @@ h2 { margin: 0 0 6px; font-family: 'Playfair Display', serif; font-size: 28px; c
 
 .password-field { position: relative; }
 .password-field input { padding-right: 46px; }
-.eye-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background:transparent; border:none; color: rgba(255,255,255,0.8); cursor:pointer; }
-.eye-toggle:hover { color: #ffd166; }
 
 .btn-primary { width:100%; padding:12px 14px; border-radius:10px; background:transparent; color:#ffd166; border:1px solid rgba(255,209,102,0.18); font-weight:700; cursor:pointer; }
 .btn-primary:hover { background:#ffd166; color:#081c15; }
@@ -197,6 +195,7 @@ input:focus {
 }
 
 /* PASSWORD FIELD & EYE */
+
 .password-field {
     position: relative;
     display: block;
@@ -204,27 +203,52 @@ input:focus {
 }
 
 .password-field input {
-    padding-right: 42px;
+    padding-right: 56px; /* espacio para el botón ojo */
 }
 
 .eye-toggle {
     position: absolute;
-    right: 0;
-    top: calc(50% + 10px); /* Ajuste para centrar respecto al input */
+    right: 8px; /* margen desde el borde del input */
+    top: 50%;
     transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    color: #ddd;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #fff;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
+    min-width: 64px;
+    height: auto;
+    padding: 6px 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    z-index: 4;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-.eye-toggle:hover { color: #fff; }
+.eye-toggle svg { display: block; width: 18px; height: 18px; }
+.eye-toggle svg path, .eye-toggle svg circle { stroke: currentColor; fill: none; stroke-width: 1.4; }
+.eye-toggle { color: #fff; }
+.eye-toggle:hover { color: #ffd166; background: rgba(255,209,102,0.06); border-color: rgba(255,209,102,0.12); }
+
+/* ensure the button doesn't create an outline when focused */
+.eye-toggle:focus { outline: none; box-shadow: 0 0 0 3px rgba(100,108,255,0.12); }
+
+/* Ocultar el botón nativo de mostrar contraseña en algunos navegadores
+   (Edge/IE/Chromium) para evitar que aparezca un segundo icono). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+input[type="password"]::-webkit-password-reveal-button,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+    display: none !important;
+}
 
 /* ERRORES y ÉXITO */
 .field-error {

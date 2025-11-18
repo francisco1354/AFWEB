@@ -11,7 +11,6 @@ import PaginaPost from './components/Pages/PaginaPost';
 import PaginaContacto from './components/Pages/PaginaContacto';
 import PaginaAdmin from './components/Pages/PaginaAdmin';
 import Footer from './components/Footer';
-import Chatbot from './components/Chatbot';
 import { getActiveUser, getUsers, saveUser, type UserData } from './utils/validation';
 
 function App() {
@@ -116,7 +115,6 @@ function App() {
     return (
         <>
             {pageElement}
-            {showFooter ? <Chatbot /> : null}
             {showFooter ? <Footer /> : null}
         </>
     );

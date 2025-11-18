@@ -1,17 +1,7 @@
-import { JSDOM } from 'jsdom';
 
-// Crear un DOM mínimo para las pruebas que usen document/window
-const dom = new JSDOM('<!doctype html><html><body></body></html>');
 
-// Copiar propiedades relevantes al globalThis
-(globalThis as any).window = dom.window as any;
-(globalThis as any).document = dom.window.document as any;
-(globalThis as any).navigator = dom.window.navigator as any;
-(globalThis as any).Event = dom.window.Event;
-(globalThis as any).Node = dom.window.Node;
-(globalThis as any).HTMLElement = dom.window.HTMLElement;
-
-// Asegurar localStorage básico si no existe (algunos tests ya lo hacen)
+// Asegurar localStorage básico si no existe (muchos tests crean su propio stub
+// pero dejamos un fallback para evitar errores en entornos inesperados).
 if (typeof (globalThis as any).localStorage === 'undefined') {
   let store: Record<string, string> = {};
   (globalThis as any).localStorage = {
@@ -23,6 +13,8 @@ if (typeof (globalThis as any).localStorage === 'undefined') {
 }
 
 // Mapear window.dispatchEvent a globalThis.dispatchEvent para compatibilidad
-(globalThis as any).dispatchEvent = (globalThis as any).window.dispatchEvent.bind((globalThis as any).window);
+if (typeof (globalThis as any).dispatchEvent === 'undefined' && typeof (globalThis as any).window !== 'undefined') {
+  (globalThis as any).dispatchEvent = (globalThis as any).window.dispatchEvent.bind((globalThis as any).window);
+}
 
 export {};
